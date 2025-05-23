@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, FormEvent, ChangeEvent } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
@@ -76,7 +76,7 @@ export function Header() {
   }, []);
   
   // Função para lidar com o login
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     // Aqui você implementaria a lógica real de autenticação
     // Por enquanto, vamos apenas simular um login bem-sucedido
@@ -96,7 +96,7 @@ export function Header() {
   };
   
   // Função para lidar com o cadastro
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
     // Validação básica
@@ -154,7 +154,7 @@ export function Header() {
                 placeholder="Buscar produtos..."
                 className="pl-10 pr-4 py-2 w-full"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
                 onFocus={() => setShowSuggestions(true)}
                 onBlur={() => {
                   // Delay to allow clicking on suggestions
@@ -417,7 +417,7 @@ export function Header() {
                 type="email" 
                 placeholder="seu@email.com" 
                 value={loginEmail}
-                onChange={(e) => setLoginEmail(e.target.value)}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setLoginEmail(e.target.value)}
                 required
               />
             </div>
@@ -427,7 +427,7 @@ export function Header() {
                 id="password" 
                 type="password"
                 value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setLoginPassword(e.target.value)}
                 required
               />
             </div>
@@ -468,7 +468,7 @@ export function Header() {
                 type="text" 
                 placeholder="Seu nome" 
                 value={registerName}
-                onChange={(e) => setRegisterName(e.target.value)}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setRegisterName(e.target.value)}
                 required
               />
             </div>
@@ -479,7 +479,7 @@ export function Header() {
                 type="email" 
                 placeholder="seu@email.com" 
                 value={registerEmail}
-                onChange={(e) => setRegisterEmail(e.target.value)}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setRegisterEmail(e.target.value)}
                 required
               />
             </div>
@@ -489,7 +489,7 @@ export function Header() {
                 id="register-password" 
                 type="password"
                 value={registerPassword}
-                onChange={(e) => setRegisterPassword(e.target.value)}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setRegisterPassword(e.target.value)}
                 required
               />
             </div>
@@ -499,7 +499,7 @@ export function Header() {
                 id="confirm-password" 
                 type="password"
                 value={registerConfirmPassword}
-                onChange={(e) => setRegisterConfirmPassword(e.target.value)}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setRegisterConfirmPassword(e.target.value)}
                 required
               />
             </div>
