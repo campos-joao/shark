@@ -76,7 +76,7 @@ export function Header() {
   }, []);
   
   // Função para lidar com o login
-  const handleLogin = (e) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     // Aqui você implementaria a lógica real de autenticação
     // Por enquanto, vamos apenas simular um login bem-sucedido
@@ -96,7 +96,7 @@ export function Header() {
   };
   
   // Função para lidar com o cadastro
-  const handleRegister = (e) => {
+  const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validação básica
