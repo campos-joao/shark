@@ -3,6 +3,8 @@
 import React, { useState, useEffect, FormEvent, ChangeEvent } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { auth } from '@/lib/firebase';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { 
   Search, 
   User, 
@@ -42,11 +44,13 @@ export function Header() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   
   // Estados para controle de autenticação e modais
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [showOrdersModal, setShowOrdersModal] = useState(false);
   const [showWishlistModal, setShowWishlistModal] = useState(false);
+  const [authError, setAuthError] = useState<string>('');
   
   // Estados para formulários
   const [loginEmail, setLoginEmail] = useState('');
@@ -64,73 +68,101 @@ export function Header() {
     
     window.addEventListener('scroll', handleScroll);
     
-    // Verificar se há um usuário logado no localStorage
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setIsLoggedIn(true);
-    }
+    // Verificar se há um usuário logado usando Firebase Auth
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      setIsLoggedIn(!!user);
+    });
     
     return () => {
       window.removeEventListener('scroll', handleScroll);
+      unsubscribe(); // Limpar o listener do Firebase Auth
     };
   }, []);
   
   // Função para lidar com o login
-  const handleLogin = (e: FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Aqui você implementaria a lógica real de autenticação
-    // Por enquanto, vamos apenas simular um login bem-sucedido
+    setAuthError('');
     
-    const user = {
-      email: loginEmail,
-      name: loginEmail.split('@')[0] // Usando parte do email como nome para demonstração
-    };
-    
-    localStorage.setItem('user', JSON.stringify(user));
-    setIsLoggedIn(true);
-    setShowLoginModal(false);
-    
-    // Resetar campos do formulário
-    setLoginEmail('');
-    setLoginPassword('');
+    try {
+      // Usar Firebase Auth para login
+      await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
+      
+      // Fechar modal e limpar campos
+      setShowLoginModal(false);
+      setLoginEmail('');
+      setLoginPassword('');
+    } catch (error: any) {
+      // Tratar erros de autenticação
+      console.error('Erro de login:', error);
+      
+      // Exibir mensagem de erro amigável
+      if (error.code === 'auth/invalid-credential') {
+        setAuthError('Email ou senha incorretos.');
+      } else if (error.code === 'auth/user-not-found') {
+        setAuthError('Usuário não encontrado.');
+      } else if (error.code === 'auth/wrong-password') {
+        setAuthError('Senha incorreta.');
+      } else {
+        setAuthError('Ocorreu um erro ao fazer login. Tente novamente.');
+      }
+    }
   };
   
   // Função para lidar com o cadastro
-  const handleRegister = (e: FormEvent<HTMLFormElement>) => {
+  const handleRegister = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setAuthError('');
     
     // Validação básica
     if (registerPassword !== registerConfirmPassword) {
-      alert('As senhas não coincidem!');
+      setAuthError('As senhas não coincidem!');
       return;
     }
     
-    // Aqui você implementaria a lógica real de cadastro
-    // Por enquanto, vamos apenas simular um cadastro bem-sucedido
-    
-    const user = {
-      name: registerName,
-      email: registerEmail
-    };
-    
-    // Transferir carrinho do localStorage para a conta, se existir
-    const cart = localStorage.getItem('cart');
-    
-    localStorage.setItem('user', JSON.stringify(user));
-    setIsLoggedIn(true);
-    setShowRegisterModal(false);
-    
-    // Resetar campos do formulário
-    setRegisterName('');
-    setRegisterEmail('');
-    setRegisterPassword('');
-    setRegisterConfirmPassword('');
+    try {
+      // Criar usuário com Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(
+        auth, 
+        registerEmail, 
+        registerPassword
+      );
+      
+      // Aqui você pode adicionar mais informações do usuário no Firestore
+      // Por exemplo, salvar o nome completo, que não é armazenado por padrão no Auth
+      // Exemplo: await setDoc(doc(db, "users", userCredential.user.uid), { name: registerName });
+      
+      // Fechar modal e limpar campos
+      setShowRegisterModal(false);
+      setRegisterName('');
+      setRegisterEmail('');
+      setRegisterPassword('');
+      setRegisterConfirmPassword('');
+    } catch (error: any) {
+      console.error('Erro de cadastro:', error);
+      
+      // Exibir mensagem de erro amigável
+      if (error.code === 'auth/email-already-in-use') {
+        setAuthError('Este email já está sendo usado por outra conta.');
+      } else if (error.code === 'auth/invalid-email') {
+        setAuthError('Email inválido.');
+      } else if (error.code === 'auth/weak-password') {
+        setAuthError('A senha é muito fraca. Use pelo menos 6 caracteres.');
+      } else {
+        setAuthError('Ocorreu um erro ao criar a conta. Tente novamente.');
+      }
+    }
   };
   
   // Função para fazer logout
-  const handleLogout = () => {
-    localStorage.removeItem('user');
-    setIsLoggedIn(false);
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      // O estado isLoggedIn será atualizado pelo listener onAuthStateChanged
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+    }
   };
 
   return (
@@ -431,6 +463,9 @@ export function Header() {
                 required
               />
             </div>
+            {authError && (
+              <div className="text-red-500 text-sm mt-2">{authError}</div>
+            )}
             <DialogFooter className="flex flex-col space-y-4">
               <Button type="submit" className="w-full">Entrar</Button>
               <div className="text-center text-sm">
@@ -439,6 +474,7 @@ export function Header() {
                   variant="link" 
                   className="p-0" 
                   onClick={() => {
+                    setAuthError('');
                     setShowLoginModal(false);
                     setShowRegisterModal(true);
                   }}
@@ -503,6 +539,9 @@ export function Header() {
                 required
               />
             </div>
+            {authError && (
+              <div className="text-red-500 text-sm mt-2">{authError}</div>
+            )}
             <DialogFooter className="flex flex-col space-y-4">
               <Button type="submit" className="w-full">Cadastrar</Button>
               <div className="text-center text-sm">
@@ -511,6 +550,7 @@ export function Header() {
                   variant="link" 
                   className="p-0" 
                   onClick={() => {
+                    setAuthError('');
                     setShowRegisterModal(false);
                     setShowLoginModal(true);
                   }}
