@@ -1,0 +1,10 @@
+# Arquivos compilados
+out/
+.next/
+node_modules/
+public/
+
+# Arquivos de configuração de terceiros
+next.config.js
+postcss.config.js
+tailwind.config.js
